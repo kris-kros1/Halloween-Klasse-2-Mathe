@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Mathe-Halloweenparty – Klasse 2</title>
+<style>
+:root{--bg:#17131f;--card:#fff8e9;--o:#f28c28;--p:#704087;--ink:#28222e;--green:#3f8f45}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:radial-gradient(circle at top,#3c2852,#17131f 65%);color:white;min-height:100vh}
+.wrap{max-width:1100px;margin:auto;padding:12px}.top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+h1{font-size:clamp(24px,4vw,42px);margin:4px 0}.pill{background:var(--o);color:#251a2b;padding:9px 14px;border-radius:999px;font-weight:900}
+.tabs{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}.tabs button,.btn{border:0;border-radius:14px;padding:10px 13px;font-size:16px;font-weight:900;cursor:pointer}
+.tabs button{background:#eee4f4;color:#34213e}.tabs button.on,.btn{background:var(--o)}
+.card{background:var(--card);color:var(--ink);border-radius:22px;padding:16px;min-height:480px;box-shadow:0 12px 35px #0006;text-align:center}
+.hidden{display:none}.ghost{font-size:62px}.number{font-size:clamp(65px,13vw,135px);line-height:1;font-weight:900;color:var(--p)}
+.task{font-size:clamp(35px,7vw,68px);font-weight:900;margin:22px 0}.answer{font-size:clamp(32px,5vw,50px);font-weight:900;color:var(--green);min-height:60px}
+.ops{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;max-width:760px;margin:16px auto}.ops button{font-size:25px;padding:16px 7px;background:white;border:3px solid var(--o);border-radius:17px;font-weight:900}
+.mode{font-size:19px;font-weight:800;color:var(--p);margin:5px}.small{font-size:17px}.score{font-size:21px;font-weight:900}
+.lineWrap{max-width:950px;margin:25px auto 15px;overflow:hidden}.line{display:grid;grid-template-columns:repeat(11,1fr);border-top:6px solid var(--p)}
+.tick{position:relative;padding-top:14px;font-weight:800}.tick:before{content:"";position:absolute;top:-8px;left:50%;height:15px;width:3px;background:var(--p)}
+.jump{font-size:23px;font-weight:900;color:var(--p);min-height:35px}.note{margin:8px auto;max-width:720px;background:#efe4f4;border-radius:14px;padding:9px;font-weight:800}
+@media(max-width:700px){.ops{grid-template-columns:repeat(2,1fr)}.card{min-height:430px;padding:11px}.ghost{font-size:48px}}
+</style></head>
+<body><div class="wrap">
+<div class="top"><div><h1>🎃 Mathe-Halloweenparty</h1><div class="small">Zahlenraum bis 100</div></div><div class="pill">Zehner & Einer</div></div>
+<div class="tabs">
+<button class="on" onclick="show('zauber',this)">🧙 Zahlenzauber</button>
+<button onclick="show('strich',this)">👻 Rechenstrich</button>
+<button onclick="show('quiz',this)">🦇 Monster-Spiel</button>
+</div>
+
+<section id="zauber" class="card">
+<div class="ghost">🧙‍♀️🎃</div><div id="start" class="number">47</div>
+<div class="mode">Wähle einen Halloween-Zauber:</div>
+<div class="ops">
+<button onclick="doRandom('tz',1)">➕ Zehner</button><button onclick="doRandom('tz',-1)">➖ Zehner</button>
+<button onclick="doRandom('e',1)">➕ Einer</button><button onclick="doRandom('e',-1)">➖ Einer</button>
+</div>
+<div id="spell" class="task">?</div><div id="result" class="answer"></div>
+<button class="btn" onclick="newStart()">🎲 Neue Startzahl</button>
+<div class="note">Einer-Zauber bleiben immer im Zehner. 👻</div>
+</section>
+
+<section id="strich" class="card hidden">
+<div class="ghost">👻</div><div id="lineTask" class="task"></div>
+<div id="jumps" class="jump"></div>
+<div class="lineWrap"><div id="line" class="line"></div></div>
+<button class="btn" onclick="revealLine()">🎃 Ziel zeigen</button>
+<button class="btn" onclick="newLineTask()">👻 Neuer Sprung</button>
+<div id="lineAnswer" class="answer">?</div>
+</section>
+
+<section id="quiz" class="card hidden">
+<div class="ghost">🦇👻🎃</div><div id="q" class="task"></div>
+<div id="choices" class="ops"></div><div id="feedback" class="answer"></div>
+<div class="score">Halloween-Punkte: <span id="score">0</span> ⭐</div>
+<button class="btn" onclick="newQuiz()">Neue Aufgabe</button>
+</section>
+</div>
+<script>
+let current=47,lastDelta=0,lineAns=0,quizAns=0,score=0;
+function show(id,b){document.querySelectorAll('section.card').forEach(x=>x.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('on'));b.classList.add('on')}
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function newStart(){current=rand(11,89);document.getElementById('start').textContent=current;document.getElementById('spell').textContent='?';document.getElementById('result').textContent=''}
+function possibleDelta(n,type,sign){
+ if(type==='tz'){
+   let max=sign>0?Math.floor((100-n)/10):Math.floor(n/10);
+   max=Math.min(max,5); if(max<1)return null;
+   return sign*10*rand(1,max);
+ } else {
+   let ones=n%10;
+   let max=sign>0?9-ones:ones;
+   if(max<1)return null;
+   return sign*rand(1,max);
+ }
+}
+function doRandom(type,sign){
+ let d=possibleDelta(current,type,sign);
+ if(d===null){newStart();d=possibleDelta(current,type,sign)}
+ lastDelta=d; let op=d>0?'+':'−';
+ document.getElementById('spell').textContent=op+' '+Math.abs(d);
+ document.getElementById('result').textContent=current+' '+op+' '+Math.abs(d)+' = '+(current+d);
+}
+let line=document.getElementById('line');
+for(let i=0;i<=100;i+=10){let x=document.createElement('div');x.className='tick';x.textContent=i;line.appendChild(x)}
+function makeTask(){
+ let type=Math.random()<.55?'tz':'e', sign=Math.random()<.5?1:-1, n=rand(11,89),d=possibleDelta(n,type,sign),tries=0;
+ while(d===null&&tries++<30){n=rand(11,89);d=possibleDelta(n,type,sign)}
+ return {n,d,type};
+}
+function newLineTask(){
+ let t=makeTask();lineAns=t.n+t.d;let op=t.d>0?'+':'−';
+ document.getElementById('lineTask').textContent=t.n+' '+op+' '+Math.abs(t.d)+' = ?';
+ document.getElementById('lineAnswer').textContent='?';
+ let count=t.type==='tz'?Math.abs(t.d)/10:Math.abs(t.d);
+ document.getElementById('jumps').textContent=(t.d>0?'→ ':'← ')+(t.type==='tz'?'10er-Sprünge: ':'1er-Schritte: ')+count;
+}
+function revealLine(){document.getElementById('lineAnswer').textContent=lineAns}
+function newQuiz(){
+ let t=makeTask();quizAns=t.n+t.d;let op=t.d>0?'+':'−';
+ document.getElementById('q').textContent=t.n+' '+op+' '+Math.abs(t.d)+' = ?';
+ let vals=[quizAns], candidates=[quizAns+10,quizAns-10,quizAns+1,quizAns-1,quizAns+2,quizAns-2];
+ candidates.sort(()=>Math.random()-.5);
+ for(let v of candidates){if(v>=0&&v<=100&&!vals.includes(v)&&vals.length<4)vals.push(v)}
+ while(vals.length<4){let v=rand(0,100);if(!vals.includes(v))vals.push(v)}
+ vals.sort(()=>Math.random()-.5);let box=document.getElementById('choices');box.innerHTML='';
+ vals.forEach(v=>{let b=document.createElement('button');b.textContent=v;b.onclick=()=>pick(v);box.appendChild(b)});
+ document.getElementById('feedback').textContent='';
+}
+function pick(v){if(v===quizAns){score++;document.getElementById('score').textContent=score;document.getElementById('feedback').textContent='🎃 Richtig!'}else document.getElementById('feedback').textContent='👻 Versuch es noch einmal!'}
+newLineTask();newQuiz();
+</script></body></html>
